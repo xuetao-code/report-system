@@ -1,0 +1,29 @@
+# Web 框架
+fastapi>=0.100.0
+uvicorn>=0.20.0
+
+# 数据库
+sqlalchemy>=2.0.0
+pymysql>=1.0.0
+
+# 数据处理
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+jinja2>=3.1.0
+
+# 导出
+reportlab>=4.0.0
+openpyxl>=3.1.0
+
+# 定时任务
+apscheduler>=3.10.0
+
+# 邮件
+aiosmtplib>=3.0.0
+
+# 工具
+python-dotenv>=1.0.0
+loguru>=0.7.0
+
+# CORS
+python-multipart>=0.0.6

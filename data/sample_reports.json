@@ -1,0 +1,23 @@
+{
+  "name": "销售统计报表（按类别）",
+  "description": "统计各类别的销售情况",
+  "dsl_definition": {
+    "dataSource": {
+      "type": "sqlite",
+      "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+      "query": "SELECT category, order_count, total_qty, total_amount FROM v_sales_summary ORDER BY total_amount DESC"
+    },
+    "parameters": [],
+    "components": [
+      {
+        "type": "table",
+        "columns": [
+          {"field": "category", "label": "类别", "width": 150},
+          {"field": "order_count", "label": "订单数", "width": 100},
+          {"field": "total_qty", "label": "销售数量", "width": 100},
+          {"field": "total_amount", "label": "销售金额", "width": 120, "format": "currency"}
+        ]
+      }
+    ]
+  }
+}

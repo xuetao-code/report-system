@@ -1,0 +1,174 @@
+{
+  "name": "销售分析仪表板",
+  "description": "包含多个图表的综合销售分析报表",
+  "dsl_definition": {
+    "dataSource": {
+      "type": "sqlite",
+      "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+      "query": "SELECT 1 as dummy"
+    },
+    "parameters": [
+      {
+        "name": "start_date",
+        "type": "date",
+        "default": "2026-03-01",
+        "label": "开始日期"
+      },
+      {
+        "name": "end_date",
+        "type": "date",
+        "default": "2026-03-31",
+        "label": "结束日期"
+      }
+    ],
+    "components": [
+      {
+        "id": "chart_monthly_trend",
+        "type": "line",
+        "title": "📈 月度销售趋势",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT month, order_count, total_sales, avg_order_value FROM v_monthly_trend"
+        },
+        "config": {
+          "xField": "month",
+          "yFields": ["total_sales"],
+          "seriesField": "month",
+          "smooth": true,
+          "areaStyle": {"opacity": 0.3},
+          "point": {"size": 5, "shape": "circle"},
+          "lineStyle": {"width": 3}
+        },
+        "columns": [
+          {"field": "month", "label": "月份"},
+          {"field": "order_count", "label": "订单数"},
+          {"field": "total_sales", "label": "销售额", "format": "currency"},
+          {"field": "avg_order_value", "label": "客单价", "format": "currency"}
+        ]
+      },
+      {
+        "id": "chart_product_ranking",
+        "type": "bar",
+        "title": "🏆 产品销售排行 TOP10",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT product_name, category, total_qty, total_amount FROM v_product_ranking LIMIT 10"
+        },
+        "config": {
+          "xField": "product_name",
+          "yField": "total_amount",
+          "seriesField": "category",
+          "barWidthRatio": 0.6,
+          "label": {
+            "position": "right",
+            "style": {"fill": "#000"},
+            "formatter": "(v) => '¥' + v.toLocaleString()"
+          }
+        },
+        "columns": [
+          {"field": "product_name", "label": "产品名称", "width": 150},
+          {"field": "category", "label": "类别", "width": 100},
+          {"field": "total_qty", "label": "销量", "width": 80},
+          {"field": "total_amount", "label": "销售额", "width": 120, "format": "currency"}
+        ]
+      },
+      {
+        "id": "chart_category_share",
+        "type": "pie",
+        "title": "📊 类别销售占比",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT category, total_amount, percentage FROM v_category_share"
+        },
+        "config": {
+          "angleField": "total_amount",
+          "colorField": "category",
+          "radius": 0.8,
+          "innerRadius": 0.5,
+          "label": {
+            "type": "outer",
+            "formatter": "{name}: {percentage}%"
+          },
+          "interactions": [{"type": "element-active"}],
+          "statistic": {
+            "title": {"content": "总销售额"},
+            "content": {"formatter": "(v) => '¥' + v.value.toLocaleString()"}
+          }
+        },
+        "columns": [
+          {"field": "category", "label": "类别"},
+          {"field": "total_amount", "label": "销售额", "format": "currency"},
+          {"field": "percentage", "label": "占比", "format": "percent"}
+        ]
+      },
+      {
+        "id": "chart_order_status",
+        "type": "pie",
+        "title": "📋 订单状态分布",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT status, order_count, percentage FROM v_order_status"
+        },
+        "config": {
+          "angleField": "order_count",
+          "colorField": "status",
+          "radius": 0.7,
+          "label": {
+            "type": "spider",
+            "formatter": "{name}: {percentage}%"
+          },
+          "interactions": [{"type": "element-active"}]
+        },
+        "columns": [
+          {"field": "status", "label": "状态"},
+          {"field": "order_count", "label": "订单数"},
+          {"field": "percentage", "label": "占比", "format": "percent"}
+        ]
+      },
+      {
+        "id": "table_customer_value",
+        "type": "table",
+        "title": "💎 客户价值分析",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT customer_name, city, order_count, total_spent, avg_order_value, last_order_date FROM v_customer_value LIMIT 10"
+        },
+        "columns": [
+          {"field": "customer_name", "label": "客户", "width": 120},
+          {"field": "city", "label": "城市", "width": 80},
+          {"field": "order_count", "label": "订单数", "width": 80},
+          {"field": "total_spent", "label": "总消费", "width": 120, "format": "currency"},
+          {"field": "avg_order_value", "label": "客单价", "width": 120, "format": "currency"},
+          {"field": "last_order_date", "label": "最近订单", "width": 120, "format": "date"}
+        ]
+      },
+      {
+        "id": "summary_cards",
+        "type": "cards",
+        "title": "📊 核心指标",
+        "dataSource": {
+          "type": "sqlite",
+          "file_path": "/root/.openclaw/workspace/report-system/data/test.db",
+          "query": "SELECT COUNT(DISTINCT order_id) as total_orders, SUM(total_amount) as total_revenue, AVG(total_amount) as avg_order, COUNT(DISTINCT customer_id) as total_customers FROM orders WHERE status = '已完成'"
+        },
+        "cards": [
+          {"field": "total_orders", "label": "总订单数", "prefix": "📦", "suffix": "单"},
+          {"field": "total_revenue", "label": "总销售额", "prefix": "💰", "format": "currency"},
+          {"field": "avg_order", "label": "客单价", "prefix": "👤", "format": "currency"},
+          {"field": "total_customers", "label": "客户数", "prefix": "👥", "suffix": "人"}
+        ]
+      }
+    ],
+    "layout": {
+      "type": "grid",
+      "columns": 2,
+      "gap": 20,
+      "order": ["summary_cards", "chart_monthly_trend", "chart_category_share", "chart_product_ranking", "chart_order_status", "table_customer_value"]
+    }
+  }
+}
