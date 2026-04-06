@@ -22,7 +22,60 @@ docker-compose down
 - 后端 API：http://localhost:8000
 - API 文档：http://localhost:8000/docs
 
-### 方式二：本地开发
+### 方式二：Conda 部署（推荐用于开发环境）
+
+```bash
+# 1. 创建 conda 环境（Python 3.11）
+conda create -n report-system python=3.11 -y
+
+# 2. 激活环境
+conda activate report-system
+
+# 3. 安装 Node.js（前端依赖）
+conda install -c conda-forge nodejs=20 -y
+
+# 4. 安装后端依赖
+cd backend
+pip install -r requirements.txt
+
+# 5. 配置环境变量
+cp .env.example .env
+# 编辑 .env 文件，设置数据库连接等配置
+
+# 6. 启动 PostgreSQL（可选，如使用 Docker）
+docker run -d --name reports-db \
+  -e POSTGRES_DB=reports \
+  -e POSTGRES_USER=user \
+  -e POSTGRES_PASSWORD=pass \
+  -p 5432:5432 \
+  postgres:15-alpine
+
+# 7. 启动后端服务
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# 8. 新终端启动前端
+cd ../frontend
+npm install
+npm run dev
+```
+
+**Conda 环境管理：**
+
+```bash
+# 导出环境配置
+conda env export > environment.yml
+
+# 从配置恢复环境
+conda env create -f environment.yml
+
+# 更新依赖
+conda env update -f environment.yml --prune
+
+# 删除环境
+conda remove -n report-system --all
+```
+
+### 方式三：原生 Python 部署
 
 #### 后端启动
 
@@ -230,4 +283,5 @@ SMTP_PASSWORD=your-password
 ---
 
 **版本：** v1.0.0-MVP  
-**日期：** 2026-04-02
+**日期：** 2026-04-02  
+**更新：** 2026-04-06 添加 Conda 部署方式支持
