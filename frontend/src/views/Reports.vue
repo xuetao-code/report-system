@@ -456,16 +456,21 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .header h2 {
   margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a365d;
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .preview-container {
@@ -478,59 +483,17 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   margin-bottom: 15px;
-  padding: 10px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #1a365d 0%, #2c5282 100%);
   border-radius: 8px;
   align-items: center;
 }
 
 .preview-header .el-tag {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
   color: white;
-  border: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
   font-weight: 500;
-}
-
-:deep(.el-dialog__header) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  padding: 15px 20px;
-}
-
-:deep(.el-dialog__title) {
-  color: white;
-  font-weight: 600;
-}
-
-:deep(.el-dialog__headerbtn .el-dialog__close) {
-  color: white;
-}
-
-:deep(.el-dialog__headerbtn .el-dialog__close:hover) {
-  color: #f0f0f0;
-}
-
-:deep(.el-table th) {
-  background: #f5f7fa !important;
-  color: #606266;
-  font-weight: 600;
-}
-
-:deep(.el-table--striped .el-table__body tr.el-table__row--striped td) {
-  background: #fafafa;
-}
-
-:deep(.el-table__row:hover) {
-  background: #f5f7fa !important;
-}
-
-:deep(.el-table td) {
-  padding: 12px 0;
-}
-
-:deep(.el-dialog__footer) {
-  padding: 15px 20px;
-  border-top: 1px solid #e6e6e6;
 }
 
 /* 分享对话框样式 */

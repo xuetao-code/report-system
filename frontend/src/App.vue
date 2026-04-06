@@ -36,29 +36,13 @@ const activeMenu = computed(() => route.path)
 
 <style scoped>
 #app {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
   height: 100vh;
-}
-
-.el-header {
-  background-color: #409EFF;
-  color: white;
-  display: flex;
-  align-items: center;
 }
 
 .el-header h1 {
   margin: 0;
-  font-size: 24px;
-}
-
-.el-aside {
-  background-color: #f5f7fa;
-  border-right: 1px solid #e6e6e6;
-}
-
-.el-main {
-  padding: 20px;
-  background-color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 </style>

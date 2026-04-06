@@ -190,10 +190,15 @@ onMounted(() => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .header h2 {
   margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1a365d;
 }
 </style>
