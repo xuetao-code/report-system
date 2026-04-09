@@ -3,13 +3,15 @@ from typing import Dict, Any, List
 from sqlalchemy import create_engine, text
 from jinja2 import Template
 from loguru import logger
+from functools import lru_cache
 
 
 class ReportEngine:
-    """报表引擎核心"""
+    """报表引擎核心 - 支持批量并发查询"""
     
     def __init__(self):
         self.engine_cache = {}
+        self.query_cache = {}  # 查询结果缓存
     
     def execute_report(self, report_dsl: dict, params: dict) -> dict:
         """
@@ -81,6 +83,42 @@ class ReportEngine:
                 del self.engine_cache[key]
         else:
             self.engine_cache.clear()
+    
+    async def execute_batch(self, components: List[Dict], dsl_definition: Dict, params: Dict) -> List[Dict]:
+        """
+        批量并发执行多个组件的查询
+        
+        Args:
+            components: 组件列表
+            dsl_definition: 完整 DSL 定义
+            params: 查询参数
+            
+        Returns:
+            带数据的组件列表
+        """
+        async def execute_single(comp: dict) -> dict:
+            """单个组件查询"""
+            try:
+                comp_copy = comp.copy()
+                result = await asyncio.get_event_loop().run_in_executor(
+                    None,
+                    lambda: self.execute_report_for_component(comp_copy, params)
+                )
+                comp_copy['data'] = result
+                return comp_copy
+            except Exception as e:
+                logger.error(f"组件 {comp.get('id', 'unknown')} 查询失败：{e}")
+                comp_copy = comp.copy()
+                comp_copy['data'] = []
+                comp_copy['error'] = str(e)
+                return comp_copy
+        
+        # 并发执行所有组件
+        tasks = [execute_single(comp) for comp in components]
+        results = await asyncio.gather(*tasks)
+        
+        logger.info(f"批量查询完成，{len(results)} 个组件")
+        return list(results)
     
     def execute_report_for_component(self, component: dict, params: dict) -> list:
         """为单个组件执行查询"""

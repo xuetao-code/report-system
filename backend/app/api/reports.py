@@ -87,7 +87,7 @@ async def delete_report(report_id: str, db: Session = Depends(get_db)):
 
 @router.post("/{report_id}/preview")
 async def preview_report(request: Request, report_id: str, db: Session = Depends(get_db)):
-    """预览报表数据（支持参数）"""
+    """预览报表数据（支持参数，批量并发查询）"""
     report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报表不存在")
@@ -101,10 +101,14 @@ async def preview_report(request: Request, report_id: str, db: Session = Depends
     if isinstance(dsl_definition, str):
         dsl_definition = json.loads(dsl_definition)
     
+    components = dsl_definition.get('components', [])
+    if not components:
+        raise HTTPException(status_code=400, detail="报表没有定义组件")
+    
     try:
-        # 执行查询
-        result = engine.execute_report(dsl_definition, params)
-        return result
+        # 批量并发执行所有组件查询
+        components_with_data = await engine.execute_batch(components, dsl_definition, params)
+        return {"components": components_with_data}
     except Exception as e:
         logger.error(f"预览报表失败：{e}")
         raise HTTPException(status_code=500, detail=f"查询执行失败：{str(e)}")

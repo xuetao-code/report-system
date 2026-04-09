@@ -48,23 +48,12 @@ async def export_report(
     if not components:
         raise HTTPException(status_code=400, detail="报表没有定义组件")
     
-    # 执行所有组件的查询
-    components_with_data = []
-    for comp in components:
-        try:
-            single_dsl = {
-                'dataSource': comp.get('dataSource', dsl_definition.get('dataSource')),
-                'components': [comp]
-            }
-            result = engine.execute_report(single_dsl, params)
-            comp_copy = comp.copy()
-            comp_copy['data'] = result.get('data', [])
-            components_with_data.append(comp_copy)
-        except Exception as e:
-            logger.error(f"组件 {comp.get('id', 'unknown')} 查询失败：{e}")
-            comp_copy = comp.copy()
-            comp_copy['data'] = []
-            components_with_data.append(comp_copy)
+    # 批量并发执行所有组件查询
+    try:
+        components_with_data = await engine.execute_batch(components, dsl_definition, params)
+    except Exception as e:
+        logger.error(f"批量查询失败：{e}")
+        raise HTTPException(status_code=500, detail=f"查询执行失败：{str(e)}")
     
     # 生成文件
     if format_type == "pdf":
