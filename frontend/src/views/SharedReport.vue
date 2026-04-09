@@ -684,15 +684,8 @@ const getCardValue = (data: any[], field: string) => {
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
-}
-
-/* 小屏幕适配 */
-@media (max-width: 768px) {
-  .cards-container {
-    grid-template-columns: repeat(2, 1fr);
-  }
 }
 
 .cards-chart-wrapper {
