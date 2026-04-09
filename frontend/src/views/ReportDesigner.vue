@@ -385,7 +385,7 @@ const loadTables = async () => {
 
 // 选择表
 const handleTableSelect = (node: any) => {
-  if (!node.columns) {
+  if (node.columns && Array.isArray(node.columns)) {
     // 是表，加载字段
     selectedFields.value = node.columns.map((col: any) => ({
       name: col.name,
