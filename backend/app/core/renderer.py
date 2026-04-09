@@ -396,11 +396,17 @@ class Renderer:
                 break
         
         if not table_component:
-            # 如果没有表格组件，使用第一个组件
-            table_component = all_data[0]
+            # 如果没有表格组件，使用第一个有 data 的组件
+            for comp in all_data:
+                if comp.get('data'):
+                    table_component = comp
+                    break
+        
+        if not table_component:
+            table_component = {'data': [], 'columns': [], 'title': 'Empty'}
         
         return self.generate_pdf(
-            table_component['data'],
-            table_component['columns'],
-            f"{title} - {table_component['title']}"
+            table_component.get('data', []),
+            table_component.get('columns', []),
+            f"{title} - {table_component.get('title', 'Report')}"
         )
