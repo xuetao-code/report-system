@@ -110,23 +110,47 @@ onMounted(() => {
 
 // 渲染图表
 const renderCharts = async () => {
+  console.log('🔍 [renderCharts] 开始渲染图表')
+  console.log('🔍 [renderCharts] components:', components.value)
+  console.log('🔍 [renderCharts] echarts 实例:', echarts)
+  
   await nextTick()
-  components.value.forEach(comp => {
+  
+  components.value.forEach((comp, index) => {
+    console.log(`🔍 [renderCharts] 处理组件 ${index}:`, comp)
+    console.log(`🔍 [renderCharts] 组件类型:`, comp.type)
+    console.log(`🔍 [renderCharts] 组件数据:`, comp.data)
+    
     if (['line', 'bar', 'pie'].includes(comp.type) && comp.data && comp.data.length > 0) {
+      console.log(`🔍 [renderCharts] 准备渲染图表：${comp.id}, 类型：${comp.type}`)
       renderChart(comp)
     }
     // 指标卡带图表的情况
     if (comp.type === 'cards' && comp.config?.chartType && comp.data && comp.data.length > 0) {
+      console.log(`🔍 [renderCharts] 准备渲染指标卡图表：${comp.id}`)
       renderCardsChart(comp)
     }
   })
+  
+  console.log('🔍 [renderCharts] 图表渲染完成')
 }
 
 const renderChart = (comp: any) => {
-  const chartDom = document.getElementById('chart-' + comp.id)
-  if (!chartDom) return
+  console.log(`🔍 [renderChart] 开始渲染组件：${comp.id}`)
+  console.log(`🔍 [renderChart] 组件配置:`, comp.config)
   
+  const chartDom = document.getElementById('chart-' + comp.id)
+  console.log(`🔍 [renderChart] chart DOM 元素:`, chartDom)
+  
+  if (!chartDom) {
+    console.error(`❌ [renderChart] 找不到图表 DOM 元素：chart-${comp.id}`)
+    return
+  }
+  
+  console.log(`🔍 [renderChart] 初始化 ECharts 实例`)
   const myChart = echarts.init(chartDom)
+  console.log(`🔍 [renderChart] ECharts 实例已创建:`, myChart)
+  
   let option: any = {}
   
   if (comp.type === 'line') {
@@ -221,19 +245,39 @@ const renderChart = (comp: any) => {
     }
   }
   
-  myChart.setOption(option)
-  charts.value[comp.id] = myChart
+  console.log(`🔍 [renderChart] 设置图表配置 option:`, option)
+  console.log(`🔍 [renderChart] 调用 setOption`)
+  
+  try {
+    myChart.setOption(option)
+    console.log(`✅ [renderChart] 图表设置成功：${comp.id}`)
+    charts.value[comp.id] = myChart
+    console.log(`🔍 [renderChart] 图表实例已保存`)
+  } catch (error) {
+    console.error(`❌ [renderChart] 设置图表失败：${comp.id}`, error)
+  }
   
   window.addEventListener('resize', () => {
     myChart.resize()
   })
+  console.log(`🔍 [renderChart] 图表渲染完成：${comp.id}`)
 }
 
 const renderCardsChart = (comp: any) => {
+  console.log(`🔍 [renderCardsChart] 开始渲染指标卡图表：${comp.id}`)
+  
   const chartDom = document.getElementById('chart-' + comp.id)
-  if (!chartDom) return
+  console.log(`🔍 [renderCardsChart] chart DOM 元素:`, chartDom)
+  
+  if (!chartDom) {
+    console.error(`❌ [renderCardsChart] 找不到图表 DOM 元素：chart-${comp.id}`)
+    return
+  }
 
+  console.log(`🔍 [renderCardsChart] 初始化 ECharts 实例`)
   const myChart = echarts.init(chartDom)
+  console.log(`🔍 [renderCardsChart] ECharts 实例已创建`)
+  
   const chartType = comp.config.chartType
   const cards = comp.cards || comp.config?.cards || []
   const data = comp.data[0] || {}
@@ -452,12 +496,20 @@ const renderCardsChart = (comp: any) => {
     }
   }
 
-  myChart.setOption(option)
-  charts.value[comp.id] = myChart
+  console.log(`🔍 [renderCardsChart] 设置图表配置 option`)
+  
+  try {
+    myChart.setOption(option)
+    console.log(`✅ [renderCardsChart] 图表设置成功：${comp.id}`)
+    charts.value[comp.id] = myChart
+  } catch (error) {
+    console.error(`❌ [renderCardsChart] 设置图表失败：${comp.id}`, error)
+  }
 
   window.addEventListener('resize', () => {
     myChart.resize()
   })
+  console.log(`🔍 [renderCardsChart] 图表渲染完成：${comp.id}`)
 }
 
 const loadReport = async () => {
