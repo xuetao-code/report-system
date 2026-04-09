@@ -111,6 +111,49 @@ class Renderer:
                     ]))
                     elements.append(table)
             
+            # 图表组件（折线图、柱状图、饼图）- 导出为数据表格
+            elif comp_type in ['line', 'bar', 'pie']:
+                data = comp.get('data', [])
+                columns = comp.get('columns', [])
+                if data and columns:
+                    # 添加图表类型说明
+                    chart_type_text = {
+                        'line': '📈 折线图',
+                        'bar': '📊 柱状图',
+                        'pie': '🥧 饼图'
+                    }.get(comp_type, '图表')
+                    
+                    from reportlab.lib.styles import ParagraphStyle
+                    chart_style = ParagraphStyle(
+                        name='ChartType',
+                        parent=getSampleStyleSheet()['Normal'],
+                        fontName=CHINESE_FONT,
+                        fontSize=10,
+                        textColor=colors.grey
+                    )
+                    elements.append(Paragraph(f"({chart_type_text})", chart_style))
+                    elements.append(Spacer(1, 5))
+                    
+                    # 构建数据表格
+                    table_data = [
+                        [col.get("label", col["field"]) for col in columns]
+                    ]
+                    for row in data:
+                        table_data.append([str(row.get(col["field"], "")) for col in columns])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, 0), 10),
+                        ('FONTSIZE', (0, 1), (-1, -1), 9),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
             elements.append(Spacer(1, 20))
         
         doc.build(elements)
