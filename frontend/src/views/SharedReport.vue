@@ -656,8 +656,13 @@ const getCardValue = (data: any[], field: string) => {
 
 .components-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 20px;
+}
+
+/* 指标卡组件需要更宽的宽度来横向排列 4 个卡片 */
+.component-card:has(.cards-container) {
+  min-width: 600px;
 }
 
 .component-card {
@@ -679,8 +684,15 @@ const getCardValue = (data: any[], field: string) => {
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 15px;
+}
+
+/* 小屏幕适配 */
+@media (max-width: 768px) {
+  .cards-container {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .cards-chart-wrapper {
