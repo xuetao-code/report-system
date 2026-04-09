@@ -361,16 +361,17 @@ class Renderer:
             # 设置表头样式（仅表格类型）
             if headers:
                 for col_idx, _ in enumerate(headers, 1):
-                cell = ws.cell(row=2, column=col_idx)
-                cell.font = cell.font.copy(bold=True)
+                    cell = ws.cell(row=2, column=col_idx)
+                    cell.font = cell.font.copy(bold=True)
             
-            # 自动调整列宽
-            for col_idx, col_def in enumerate(columns, 1):
-                max_length = len(str(col_def.get("label", col_def["field"])))
-                for row in data[:50]:
-                    cell_length = len(str(row.get(col_def["field"], "")))
-                    max_length = max(max_length, cell_length)
-                ws.column_dimensions[self._col_letter(col_idx)].width = min(max_length + 2, 50)
+            # 自动调整列宽（仅表格类型）
+            if comp_type == 'table' and columns:
+                for col_idx, col_def in enumerate(columns, 1):
+                    max_length = len(str(col_def.get("label", col_def["field"])))
+                    for row in data[:50]:
+                        cell_length = len(str(row.get(col_def["field"], "")))
+                        max_length = max(max_length, cell_length)
+                    ws.column_dimensions[self._col_letter(col_idx)].width = min(max_length + 2, 50)
         
         buffer = BytesIO()
         wb.save(buffer)
