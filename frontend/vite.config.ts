@@ -9,6 +9,18 @@ export default defineConfig({
       '@': resolve(__dirname, 'src')
     }
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: undefined
+      }
+    },
+    chunkSizeWarningLimit: 1500,
+    minify: false,
+    sourcemap: false,
+    target: 'es2015',
+    cssCodeSplit: false
+  },
   server: {
     host: '0.0.0.0',
     port: 3000,

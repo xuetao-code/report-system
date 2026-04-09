@@ -483,6 +483,9 @@ const loadReport = async () => {
     
     console.log('Report loaded:', data)
     
+    // 渲染图表
+    await renderCharts()
+    
     // 自动刷新
     if (config.value.refresh_interval > 0) {
       setInterval(refresh, config.value.refresh_interval * 1000)
