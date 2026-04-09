@@ -678,9 +678,9 @@ const getCardValue = (data: any[], field: string) => {
 }
 
 .cards-container {
-  display: flex;
-  gap: 20px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 15px;
 }
 
 .cards-chart-wrapper {
