@@ -679,7 +679,7 @@ const getCardValue = (data: any[], field: string) => {
 
 .cards-container {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 15px;
 }
 
@@ -694,11 +694,27 @@ const getCardValue = (data: any[], field: string) => {
 
 .metric-card {
   text-align: center;
-  padding: 20px;
+  padding: 15px 10px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border-radius: 8px;
   color: white;
-  min-width: 150px;
+  min-width: 120px;
+}
+
+.metric-prefix {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.metric-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin: 8px 0;
+}
+
+.metric-label {
+  font-size: 12px;
+  margin: 5px 0;
 }
 
 .metric-prefix {
