@@ -139,7 +139,8 @@ const renderChart = (comp: any) => {
   console.log(`🔍 [renderChart] 开始渲染组件：${comp.id}`)
   console.log(`🔍 [renderChart] 组件配置:`, comp.config)
   
-  const chartDom = document.getElementById('chart-' + comp.id)
+  // 使用 querySelector 代替 getElementById，更可靠
+  const chartDom = document.querySelector(`#chart-${comp.id}`) as HTMLElement
   console.log(`🔍 [renderChart] chart DOM 元素:`, chartDom)
   
   if (!chartDom) {
@@ -266,7 +267,8 @@ const renderChart = (comp: any) => {
 const renderCardsChart = (comp: any) => {
   console.log(`🔍 [renderCardsChart] 开始渲染指标卡图表：${comp.id}`)
   
-  const chartDom = document.getElementById('chart-' + comp.id)
+  // 使用 querySelector 代替 getElementById，更可靠
+  const chartDom = document.querySelector(`#chart-${comp.id}`) as HTMLElement
   console.log(`🔍 [renderCardsChart] chart DOM 元素:`, chartDom)
   
   if (!chartDom) {
@@ -540,8 +542,11 @@ const loadReport = async () => {
     await nextTick()
     console.log('🔍 [loadReport] DOM 已更新，开始渲染图表')
     
-    // 渲染图表
-    await renderCharts()
+    // 使用 setTimeout 确保 DOM 完全准备好
+    setTimeout(async () => {
+      console.log('🔍 [loadReport] setTimeout 触发，开始渲染图表')
+      await renderCharts()
+    }, 100)
     
     // 自动刷新
     if (config.value.refresh_interval > 0) {
