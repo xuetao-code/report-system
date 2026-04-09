@@ -113,8 +113,10 @@ class Renderer:
             
             # 图表组件（折线图、柱状图、饼图）- 导出为数据表格
             elif comp_type in ['line', 'bar', 'pie']:
+                logger.info(f"处理图表组件：{comp_type}, title={comp.get('title')}")
                 data = comp.get('data', [])
                 columns = comp.get('columns', [])
+                logger.info(f"图表数据：{len(data)} 条记录，{len(columns)} 列")
                 if data and columns:
                     # 添加图表类型说明
                     chart_type_text = {
@@ -424,36 +426,137 @@ class Renderer:
         logger.info(f"生成多组件 Excel，{len(all_data)} 个组件")
         return excel_bytes
     
-    def generate_pdf_multi(self, all_data: list, title: str = "报表") -> bytes:
+    def generate_pdf_multi(self, components: List[Dict], title: str = "报表") -> bytes:
         """
-        生成多组件 PDF 文件（简化版：只生成第一个表格组件）
+        生成多组件 PDF 文件（包含所有组件：表格、图表、指标卡）
         
         Args:
-            all_data: 所有组件数据
+            components: 所有组件数据 [{'type': 'table|bar|line|pie|cards', 'title': '', 'data': [], 'columns': []}]
             title: 报表标题
             
         Returns:
             PDF 文件字节
         """
-        # 找到第一个表格组件
-        table_component = None
-        for comp in all_data:
-            if comp['type'] == 'table':
-                table_component = comp
-                break
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
         
-        if not table_component:
-            # 如果没有表格组件，使用第一个有 data 的组件
-            for comp in all_data:
-                if comp.get('data'):
-                    table_component = comp
-                    break
-        
-        if not table_component:
-            table_component = {'data': [], 'columns': [], 'title': 'Empty'}
-        
-        return self.generate_pdf(
-            table_component.get('data', []),
-            table_component.get('columns', []),
-            f"{title} - {table_component.get('title', 'Report')}"
+        # 报表总标题
+        from reportlab.lib.styles import ParagraphStyle
+        title_style = ParagraphStyle(
+            name='ChineseTitle',
+            parent=getSampleStyleSheet()['Heading1'],
+            fontName=CHINESE_FONT,
+            fontSize=18,
+            leading=22,
+            alignment=1
         )
+        elements.append(Paragraph(title, title_style))
+        elements.append(Spacer(1, 20))
+        
+        # 渲染每个组件
+        for comp in components:
+            comp_type = comp.get('type')
+            comp_title = comp.get('title', '未命名组件')
+            data = comp.get('data', [])
+            columns = comp.get('columns', [])
+            
+            # 组件标题
+            subtitle_style = ParagraphStyle(
+                name='ChineseSubtitle',
+                parent=getSampleStyleSheet()['Heading2'],
+                fontName=CHINESE_FONT,
+                fontSize=14,
+                leading=18
+            )
+            elements.append(Paragraph(f"{comp_title}", subtitle_style))
+            elements.append(Spacer(1, 10))
+            
+            # 表格组件
+            if comp_type == 'table':
+                if data and columns:
+                    table_data = [[col.get("label", col["field"]) for col in columns]]
+                    for row in data:
+                        table_data.append([str(row.get(col["field"], "")) for col in columns])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, 0), 12),
+                        ('FONTSIZE', (0, 1), (-1, -1), 10),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
+            # 指标卡组件
+            elif comp_type == 'cards':
+                cards = comp.get('cards', []) or comp.get('config', {}).get('cards', [])
+                if cards and data and len(data) > 0:
+                    card_data = data[0]
+                    table_data = [['指标', '值']]
+                    for card in cards:
+                        field = card.get('field')
+                        label = card.get('label', field)
+                        value = card_data.get(field, '')
+                        table_data.append([label, str(value)])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, -1), 11),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
+            # 图表组件（折线图、柱状图、饼图）- 导出为数据表格
+            elif comp_type in ['line', 'bar', 'pie']:
+                logger.info(f"处理图表组件：{comp_type}, title={comp_title}, data={len(data)}条")
+                if data and columns:
+                    # 添加图表类型说明
+                    chart_type_text = {
+                        'line': '📈 折线图',
+                        'bar': '📊 柱状图',
+                        'pie': '🥧 饼图'
+                    }.get(comp_type, '图表')
+                    
+                    chart_style = ParagraphStyle(
+                        name='ChartType',
+                        parent=getSampleStyleSheet()['Normal'],
+                        fontName=CHINESE_FONT,
+                        fontSize=10,
+                        textColor=colors.grey
+                    )
+                    elements.append(Paragraph(f"({chart_type_text})", chart_style))
+                    elements.append(Spacer(1, 5))
+                    
+                    # 构建数据表格
+                    table_data = [[col.get("label", col["field"]) for col in columns]]
+                    for row in data:
+                        table_data.append([str(row.get(col["field"], "")) for col in columns])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, 0), 10),
+                        ('FONTSIZE', (0, 1), (-1, -1), 9),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
+            elements.append(Spacer(1, 20))
+        
+        doc.build(elements)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        logger.info(f"生成 PDF（多组件），{len(components)} 个组件")
+        return pdf_bytes
