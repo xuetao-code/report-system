@@ -105,11 +105,10 @@ class ReportEngine:
                 comp_copy = comp.copy()
                 # 如果组件没有 dataSource，使用顶层的
                 if not comp_copy.get('dataSource'):
-                    comp_copy['dataSource'] = top_ds
-                result = await asyncio.get_event_loop().run_in_executor(
-                    None,
-                    lambda: self.execute_report_for_component(comp_copy, params)
-                )
+                    comp_copy['dataSource'] = top_ds.copy() if top_ds else {}
+                
+                # 直接同步调用（避免 lambda 闭包问题）
+                result = self.execute_report_for_component(comp_copy, params)
                 comp_copy['data'] = result
                 return comp_copy
             except Exception as e:

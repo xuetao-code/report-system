@@ -323,22 +323,38 @@ class Renderer:
         
         # 为每个组件创建工作表
         for i, component in enumerate(all_data):
-            ws = wb.create_sheet(title=component['title'][:31])
-            columns = component['columns']
-            data = component['data']
+            comp_type = component.get('type', 'table')
+            comp_title = component.get('title', f'组件{i+1}')[:31]
+            ws = wb.create_sheet(title=comp_title)
+            data = component.get('data', [])
             
             # 添加组件标题
-            ws.merge_cells(f'A1:{self._col_letter(len(columns))}1')
-            ws['A1'] = component['title']
+            ws['A1'] = comp_title
             ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
             
-            # 表头
-            headers = [col.get("label", col["field"]) for col in columns]
-            ws.append(headers)
+            # 表格类型组件
+            if comp_type == 'table':
+                columns = component.get('columns', [])
+                if columns and data:
+                    # 表头
+                    headers = [col.get("label", col["field"]) for col in columns]
+                    ws.append(headers)
+                    
+                    # 数据行
+                    for row in data:
+                        ws.append([row.get(col["field"], "") for col in columns])
             
-            # 数据行
-            for row in data:
-                ws.append([row.get(col["field"], "") for col in columns])
+            # 指标卡类型组件
+            elif comp_type == 'cards':
+                cards = component.get('cards', []) or component.get('config', {}).get('cards', [])
+                if cards and data and len(data) > 0:
+                    card_data = data[0]
+                    ws.append(['指标', '值'])
+                    for card in cards:
+                        field = card.get('field')
+                        label = card.get('label', field)
+                        value = card_data.get(field, '')
+                        ws.append([label, value])
             
             # 设置表头样式
             for col_idx, _ in enumerate(headers, 1):
