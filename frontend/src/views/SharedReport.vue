@@ -535,6 +535,11 @@ const loadReport = async () => {
     
     console.log('Report loaded:', data)
     
+    // 等待 DOM 完全渲染后再渲染图表
+    await nextTick()
+    await nextTick()
+    console.log('🔍 [loadReport] DOM 已更新，开始渲染图表')
+    
     // 渲染图表
     await renderCharts()
     
