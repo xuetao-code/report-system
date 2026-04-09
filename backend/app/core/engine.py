@@ -90,16 +90,22 @@ class ReportEngine:
         
         Args:
             components: 组件列表
-            dsl_definition: 完整 DSL 定义
+            dsl_definition: 完整 DSL 定义（包含顶层 dataSource）
             params: 查询参数
             
         Returns:
             带数据的组件列表
         """
+        # 顶层 dataSource（如果组件没有单独的 dataSource）
+        top_ds = dsl_definition.get('dataSource', {})
+        
         async def execute_single(comp: dict) -> dict:
             """单个组件查询"""
             try:
                 comp_copy = comp.copy()
+                # 如果组件没有 dataSource，使用顶层的
+                if not comp_copy.get('dataSource'):
+                    comp_copy['dataSource'] = top_ds
                 result = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: self.execute_report_for_component(comp_copy, params)
