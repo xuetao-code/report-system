@@ -332,6 +332,8 @@ class Renderer:
             ws['A1'] = comp_title
             ws['A1'].font = ws['A1'].font.copy(bold=True, size=14)
             
+            headers = []
+            
             # 表格类型组件
             if comp_type == 'table':
                 columns = component.get('columns', [])
@@ -356,8 +358,9 @@ class Renderer:
                         value = card_data.get(field, '')
                         ws.append([label, value])
             
-            # 设置表头样式
-            for col_idx, _ in enumerate(headers, 1):
+            # 设置表头样式（仅表格类型）
+            if headers:
+                for col_idx, _ in enumerate(headers, 1):
                 cell = ws.cell(row=2, column=col_idx)
                 cell.font = cell.font.copy(bold=True)
             
