@@ -14,9 +14,9 @@
       <el-table-column prop="created_at" label="创建时间" width="180" />
       <el-table-column label="操作" width="380">
         <template #default="{ row }">
-          <el-button size="small" @click="handlePreview(row)">预览</el-button>
-          <el-button size="small" @click="handleExport(row, 'excel')">导出 Excel</el-button>
-          <el-button size="small" @click="handleExport(row, 'pdf')">导出 PDF</el-button>
+          <el-button size="small" @click="handlePreview(row)">👁️ 预览</el-button>
+          <el-button size="small" @click="handleExport(row, 'excel')">📊 Excel</el-button>
+          <el-button size="small" @click="handleExport(row, 'pdf')">📄 PDF</el-button>
           <el-button size="small" type="success" @click="handleShare(row)">📤 发布</el-button>
           <el-button size="small" type="danger" @click="handleDelete(row)">删除</el-button>
         </template>
@@ -251,20 +251,9 @@ const handleCreate = async () => {
   }
 }
 
-const handlePreview = async (row: any) => {
-  previewLoading.value = true
-  currentReport.value = row
-  try {
-    const res = await reportsApi.preview(row.id)
-    previewData.value = res.data
-    previewColumns.value = res.data.components?.[0]?.columns || []
-    showPreviewDialog.value = true
-    ElMessage.success(`加载 ${res.data.data.length} 条记录`)
-  } catch (error) {
-    ElMessage.error('预览失败')
-  } finally {
-    previewLoading.value = false
-  }
+const handlePreview = (row: any) => {
+  // 跳转到预览页面
+  router.push(`/preview/${row.id}`)
 }
 
 const exportFromPreview = async (format: string) => {

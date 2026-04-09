@@ -29,6 +29,11 @@ const routes = [
     path: '/designer/:id',
     name: 'ReportDesignerEdit',
     component: () => import('@/views/ReportDesigner.vue')
+  },
+  {
+    path: '/preview/:reportId',
+    name: 'ReportPreview',
+    component: () => import('@/views/ReportPreview.vue')
   }
 ]
 

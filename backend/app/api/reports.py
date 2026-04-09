@@ -1,14 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from typing import List, Optional
 import uuid
 from datetime import datetime
+import json
 
 from app.database import get_db
 from app.models.report import Report
 from app.schemas.report import ReportCreate, ReportUpdate, ReportResponse
+from app.core.engine import ReportEngine
 from sqlalchemy.orm import Session
 
 router = APIRouter()
+engine = ReportEngine()
 
 
 @router.get("", response_model=List[ReportResponse])
@@ -80,3 +83,28 @@ async def delete_report(report_id: str, db: Session = Depends(get_db)):
     db.delete(report)
     db.commit()
     return {"message": "删除成功"}
+
+
+@router.post("/{report_id}/preview")
+async def preview_report(request: Request, report_id: str, db: Session = Depends(get_db)):
+    """预览报表数据（支持参数）"""
+    report = db.query(Report).filter(Report.id == report_id).first()
+    if not report:
+        raise HTTPException(status_code=404, detail="报表不存在")
+    
+    # 解析请求体
+    body = await request.json()
+    params = body.get('params', {})
+    
+    # 解析 DSL
+    dsl_definition = report.dsl_definition
+    if isinstance(dsl_definition, str):
+        dsl_definition = json.loads(dsl_definition)
+    
+    try:
+        # 执行查询
+        result = engine.execute_report(dsl_definition, params)
+        return result
+    except Exception as e:
+        logger.error(f"预览报表失败：{e}")
+        raise HTTPException(status_code=500, detail=f"查询执行失败：{str(e)}")
