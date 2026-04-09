@@ -76,7 +76,17 @@
           <h1>{{ reportData.name }}</h1>
           <div class="header-actions">
             <el-button @click="goBack">← 返回</el-button>
-            <el-button @click="download">📥 下载</el-button>
+            <el-dropdown @command="handleDownload">
+              <el-button type="primary">
+                📥 下载<el-icon class="el-icon--right"><arrow-down /></el-icon>
+              </el-button>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item command="excel">📊 Excel</el-dropdown-item>
+                  <el-dropdown-item command="pdf">📄 PDF</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
             <el-button @click="refreshReport">🔄 刷新</el-button>
           </div>
         </div>
@@ -139,6 +149,7 @@
 import { ref, onMounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
 const route = useRoute()
@@ -364,8 +375,40 @@ const getCardValue = (data: any[], field: string) => {
 }
 
 // 下载
-const download = () => {
-  ElMessage.info('下载功能开发中...')
+const handleDownload = async (format: string) => {
+  try {
+    const reportId = route.params.reportId as string
+    
+    const response = await fetch(`/api/exports/export`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        report_id: reportId,
+        format: format,
+        params: paramValues.value
+      })
+    })
+    
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      throw new Error(errorData.detail || `HTTP ${response.status}`)
+    }
+    
+    // 下载文件
+    const blob = await response.blob()
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `${reportData.value.name}.${format === 'excel' ? 'xlsx' : 'pdf'}`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+    
+    ElMessage.success('下载成功')
+  } catch (e: any) {
+    ElMessage.error(`下载失败：${e.message}`)
+  }
 }
 
 // 返回

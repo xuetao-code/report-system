@@ -21,40 +21,58 @@ renderer = Renderer()
 
 @router.post("/export")
 async def export_report(
-    export_data: ExportRequest,
+    request: Request,
     db: Session = Depends(get_db)
 ):
-    """导出报表为 PDF 或 Excel"""
-    report = db.query(Report).filter(Report.id == export_data.report_id).first()
+    """导出报表为 PDF 或 Excel（支持多组件）"""
+    body = await request.json()
+    report_id = body.get('report_id')
+    format_type = body.get('format')
+    params = body.get('params', {})
+    
+    if not report_id:
+        raise HTTPException(status_code=400, detail="缺少 report_id")
+    if not format_type:
+        raise HTTPException(status_code=400, detail="缺少 format")
+    
+    report = db.query(Report).filter(Report.id == report_id).first()
     if not report:
         raise HTTPException(status_code=404, detail="报表不存在")
     
-    # dsl_definition 可能已经是 dict（SQLAlchemy JSONB 类型）
+    # 解析 DSL
     dsl_definition = report.dsl_definition
     if isinstance(dsl_definition, str):
         dsl_definition = json.loads(dsl_definition)
     
     components = dsl_definition.get('components', [])
-    
     if not components:
         raise HTTPException(status_code=400, detail="报表没有定义组件")
     
-    # 使用第一个组件
-    component = components[0]
+    # 执行所有组件的查询
+    components_with_data = []
+    for comp in components:
+        try:
+            single_dsl = {
+                'dataSource': comp.get('dataSource', dsl_definition.get('dataSource')),
+                'components': [comp]
+            }
+            result = engine.execute_report(single_dsl, params)
+            comp_copy = comp.copy()
+            comp_copy['data'] = result.get('data', [])
+            components_with_data.append(comp_copy)
+        except Exception as e:
+            logger.error(f"组件 {comp.get('id', 'unknown')} 查询失败：{e}")
+            comp_copy = comp.copy()
+            comp_copy['data'] = []
+            components_with_data.append(comp_copy)
     
-    try:
-        data = engine.execute_report_for_component(component, export_data.params or {})
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"查询执行失败：{str(e)}")
-    
-    columns = component.get('columns', [])
-    
-    if export_data.format == "pdf":
-        file_bytes = renderer.generate_pdf(data, columns, component.get('title', report.name))
+    # 生成文件
+    if format_type == "pdf":
+        file_bytes = renderer.generate_pdf_multi(components_with_data, report.name)
         media_type = "application/pdf"
         filename = f"{report.name}.pdf"
-    elif export_data.format == "excel":
-        file_bytes = renderer.generate_excel(data, columns, component.get('title', report.name))
+    elif format_type == "excel":
+        file_bytes = renderer.generate_excel_multi(components_with_data, report.name)
         media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         filename = f"{report.name}.xlsx"
     else:

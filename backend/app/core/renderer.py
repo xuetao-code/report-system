@@ -1,5 +1,5 @@
 from reportlab.lib.pagesizes import A4
-from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.pdfbase import pdfmetrics
@@ -11,7 +11,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-# 注册 CJK 字体（不需要外部字体文件）
+# 注册 CJK 字体
 pdfmetrics.registerFont(UnicodeCIDFont('STSong-Light'))
 CHINESE_FONT = 'STSong-Light'
 logger.info("已注册 CJK 中文字体：STSong-Light")
@@ -19,6 +19,158 @@ logger.info("已注册 CJK 中文字体：STSong-Light")
 
 class Renderer:
     """报表渲染器 - 生成 PDF 和 Excel"""
+    
+    def generate_pdf_multi(self, components: List[Dict], title: str = "报表") -> bytes:
+        """
+        生成 PDF 文件（支持多组件）
+        
+        Args:
+            components: 组件列表 [{"title": "xxx", "type": "table", "data": [...], "columns": [...]}]
+            title: 报表标题
+            
+        Returns:
+            PDF 文件字节
+        """
+        buffer = BytesIO()
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        elements = []
+        
+        # 标题样式
+        from reportlab.lib.styles import ParagraphStyle
+        title_style = ParagraphStyle(
+            name='ChineseTitle',
+            parent=getSampleStyleSheet()['Heading1'],
+            fontName=CHINESE_FONT,
+            fontSize=18,
+            leading=22,
+            alignment=1
+        )
+        
+        elements.append(Paragraph(title, title_style))
+        elements.append(Spacer(1, 20))
+        
+        # 渲染每个组件
+        for comp in components:
+            comp_type = comp.get('type')
+            comp_title = comp.get('title', '未命名组件')
+            
+            # 组件标题
+            subtitle_style = ParagraphStyle(
+                name='ChineseSubtitle',
+                parent=getSampleStyleSheet()['Heading2'],
+                fontName=CHINESE_FONT,
+                fontSize=14,
+                leading=18
+            )
+            elements.append(Paragraph(f"{comp_title}", subtitle_style))
+            elements.append(Spacer(1, 10))
+            
+            # 表格组件
+            if comp_type == 'table':
+                data = comp.get('data', [])
+                columns = comp.get('columns', [])
+                if data and columns:
+                    table_data = [
+                        [col.get("label", col["field"]) for col in columns]
+                    ]
+                    for row in data:
+                        table_data.append([str(row.get(col["field"], "")) for col in columns])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
+                        ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, 0), 12),
+                        ('FONTSIZE', (0, 1), (-1, -1), 10),
+                        ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
+            # 指标卡组件
+            elif comp_type == 'cards':
+                cards = comp.get('cards', []) or comp.get('config', {}).get('cards', [])
+                if cards and comp.get('data') and len(comp['data']) > 0:
+                    card_data = comp['data'][0]
+                    table_data = [['指标', '值']]
+                    for card in cards:
+                        field = card.get('field')
+                        label = card.get('label', field)
+                        value = card_data.get(field, '')
+                        table_data.append([label, str(value)])
+                    
+                    table = Table(table_data, repeatRows=1)
+                    table.setStyle(TableStyle([
+                        ('BACKGROUND', (0, 0), (-1, 0), colors.lightblue),
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('FONTNAME', (0, 0), (-1, -1), CHINESE_FONT),
+                        ('FONTSIZE', (0, 0), (-1, -1), 11),
+                        ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
+                    ]))
+                    elements.append(table)
+            
+            elements.append(Spacer(1, 20))
+        
+        doc.build(elements)
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        logger.info(f"生成 PDF（多组件），{len(components)} 个组件")
+        return pdf_bytes
+    
+    def generate_excel_multi(self, components: List[Dict], title: str = "报表") -> bytes:
+        """
+        生成 Excel 文件（支持多组件，多 Sheet）
+        
+        Args:
+            components: 组件列表
+            title: 报表标题
+            
+        Returns:
+            Excel 文件字节
+        """
+        wb = Workbook()
+        wb.remove(wb.active)  # 删除默认 Sheet
+        
+        # 为每个组件创建一个 Sheet
+        for i, comp in enumerate(components):
+            comp_type = comp.get('type')
+            comp_title = comp.get('title', f'组件{i+1}')[:31]  # Excel Sheet 名最长 31 字符
+            
+            ws = wb.create_sheet(title=comp_title)
+            
+            # 表格组件
+            if comp_type == 'table':
+                data = comp.get('data', [])
+                columns = comp.get('columns', [])
+                if data and columns:
+                    # 表头
+                    headers = [col.get("label", col["field"]) for col in columns]
+                    ws.append(headers)
+                    
+                    # 数据行
+                    for row in data:
+                        ws.append([row.get(col["field"], "") for col in columns])
+            
+            # 指标卡组件
+            elif comp_type == 'cards':
+                cards = comp.get('cards', []) or comp.get('config', {}).get('cards', [])
+                if cards and comp.get('data') and len(comp['data']) > 0:
+                    card_data = comp['data'][0]
+                    ws.append(['指标', '值'])
+                    for card in cards:
+                        field = card.get('field')
+                        label = card.get('label', field)
+                        value = card_data.get(field, '')
+                        ws.append([label, value])
+        
+        buffer = BytesIO()
+        wb.save(buffer)
+        excel_bytes = buffer.getvalue()
+        buffer.close()
+        logger.info(f"生成 Excel（多组件），{len(components)} 个组件")
+        return excel_bytes
     
     def generate_pdf(self, data: List[Dict], columns: List[Dict], title: str = "报表") -> bytes:
         """
